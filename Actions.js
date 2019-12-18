@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
      )
     .catch(err => {
         res.status(500).json({
-          message: 'Could not retrieve actions.',
+          message: 'Server error- Could not retrieve actions.',
           err
         })
     })
@@ -31,7 +31,7 @@ router.get('/:id', (req, res) => {
      })
     .catch(err => {
         res.status(500).json({
-          message: 'Could not retrieve action.',
+          message: 'Server error- Could not retrieve action.',
           err
         })
     })
@@ -39,18 +39,25 @@ router.get('/:id', (req, res) => {
 
   
 router.post('/:id', (req, res) => {
-    const newAction = req.body;
+    const newAction, { project_id, description, notes } = req.body;
+
     console.log(newAction);
 
     db.insert(newAction)
   
     .then(added => {
+      if (!project_id || !description || !notes) {
+        res.status(404).json({
+          message: "Please include project_id, description, and notes"
+        })
+      } else {
       res.status(201).json(added)
+      }
     })
   
     .catch(err => {
       res.status(500).json({
-        message: 'Could not add action at this time.',
+        message: 'Server error- Could not add action at this time.',
         err
       })
     })
@@ -59,11 +66,11 @@ router.post('/:id', (req, res) => {
   
 router.put('/:id', (req, res) => {
     const { id } = req.params;
-    const object = req.body;
+    const { project_id, description, notes } = req.body;
     
-    if(!id || !object){
+    if(!id || !project_id || !description || !notes){
         res.status(400).json({
-          error: "Please include all fields"
+          error: "Please include ID, project_id, description, and notes "
         })
       }
       
@@ -75,13 +82,13 @@ router.put('/:id', (req, res) => {
               res.status(200).json(action)
             } else {
               res.status(404).json({
-                message: "The post with this ID does not exist."
+                message: "The action with this ID does not exist."
                 })
             }
     })   
     .catch(err => {
           res.status(500).json({
-            message: 'Could not update action at this time.', 
+            message: 'Server error- Could not update action at this time.', 
             err
       })
     })
@@ -93,7 +100,7 @@ router.delete('/:id', (req, res) => {
   
     .then(deleted => {
       if(deleted)
-      res.status(200).json({
+      res.status(204).json({
         message: 'Deleted action.'
       })
       else{
@@ -104,7 +111,7 @@ router.delete('/:id', (req, res) => {
     })
     .catch(err => {
       res.status(500).json({
-        message: 'Could not delete action at this time.',
+        message: 'Server error- Could not delete action at this time.',
         err
       })
     })

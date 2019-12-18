@@ -12,7 +12,7 @@ router.get('/', (req, res) => {
      )
     .catch(err => {
         res.status(500).json({
-          message: 'Could not retrieve projects.',
+          message: 'Server error- Could not retrieve projects.',
           err
         })
       })
@@ -22,13 +22,18 @@ router.get('/', (req, res) => {
     const { id } = req.params;
     db.get(id)
 
-        .then(project => {
-        res.status(200).json(project)
-            }
-        )
+    .then(project => {
+        if(!id)
+            res.status(404).json({
+            message: "Could not find project with this ID."
+        })
+        else {
+            res.status(200).json(project)
+        }
+    })
     .catch(err => {
         res.status(500).json({
-            message: 'Could not retrieve project.',
+            message: 'Server error- Could not retrieve project.',
             err
         })
         })
@@ -36,17 +41,22 @@ router.get('/', (req, res) => {
       
   
 
-router.post('/', (req, res) => {
-    const { object } = req.body;
-    db.insert({object})
+router.post('/:id', (req, res) => {
+    const project = req.body;
+    db.insert(project)
 
     .then(added => {
-    res.status(200).json(added)
-
+      if (!name || !description) {
+        res.status(404).json({
+          message: "Please include name and description"
+        })
+      } else {
+    res.status(201).json(added)
+      }
     })
     .catch(err => {
     res.status(500).json({
-        message: 'Could not add at this time.',
+        message: 'Server error- Could not add project at this time.',
         err
     })
     })
@@ -54,45 +64,52 @@ router.post('/', (req, res) => {
 
 router.put('/:id', (req, res) => {
     const { id } = req.params;
-    const { object } = req.body;
-    db.update( {id}, {object} )
+    const {name, description} = req.body;
 
-    .then(updated => {
-        if(!id || !object)
-        res.status(404).json({
-            error: null
+    if(!id || !name || !description){
+        res.status(400).json({
+          error: "Please include ID, name, and description"
         })
-        else {
-        res.status(200).json(updated)
-        }
-    }
-    )
+      }
+      
+      else {
+        db.update(req.params.id, req.body)
+        .then(project => 
+          {
+            if(project){
+              res.status(200).json(project)
+            } else {
+              res.status(404).json({
+                message: "The project with this ID does not exist."
+                })
+            }
+    })   
     .catch(err => {
-        res.status(500).json({
-        message: 'Could not update at this time.',
-        err
-        })
+          res.status(500).json({
+            message: 'Server error- Could not update project at this time.', 
+            err
+      })
     })
-    })
+  }})
 
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
-    db.remove({id})
+    db.remove(id)
 
     .then(deleted => {
         if(deleted)
-        res.status(200).json({
+        res.status(204).json({
         message: 'Project was deleted.'
         })
         else{
         res.status(404).json({
-            message: 'Please use a valid ID.'
+            message: 'Please select a project with a valid ID.'
         })
         }
     })
     .catch(err => {
         res.status(500).json({
-        Message: 'Could not delete at this time.',
+        message: 'Server error- Could not delete project at this time.',
         err
         })
     })
