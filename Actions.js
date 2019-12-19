@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
      )
     .catch(err => {
         res.status(500).json({
-          message: 'Could not retrieve actions.',
+          message: 'Server error- Could not retrieve actions.',
           err
         })
     })
@@ -21,64 +21,86 @@ router.get('/:id', (req, res) => {
     db.get( id )
 
      .then(action => {
+       if (!id) 
+       res.status(404).json({
+         message: "Could not find action with this ID."
+       })
+       else {
             res.status(200).json(action)
           }
-     )
+     })
     .catch(err => {
         res.status(500).json({
-          message: 'Could not retrieve action.',
+          message: 'Server error- Could not retrieve action.',
           err
         })
     })
   })
 
   
-router.post('/', (req, res) => {
-    const { object } = req.body;
-    db.insert({object})
+router.post('/:id', (req, res) => {
+    const newAction, { project_id, description, notes } = req.body;
+
+    console.log(newAction);
+
+    db.insert(newAction)
   
     .then(added => {
+      if (!project_id || !description || !notes) {
+        res.status(404).json({
+          message: "Please include project_id, description, and notes"
+        })
+      } else {
       res.status(201).json(added)
+      }
+    })
   
     .catch(err => {
       res.status(500).json({
-        message: 'Could not add action at this time.',
+        message: 'Server error- Could not add action at this time.',
         err
       })
     })
-  })
-  })
+  });
+
   
 router.put('/:id', (req, res) => {
     const { id } = req.params;
-    const { object } = req.body;
+    const { project_id, description, notes } = req.body;
     
-    db.update( {id}, {object} )
-    .then(updated => {
-      if(!id || !object)
-        res.status(404).json({
-          error: null
+    if(!id || !project_id || !description || !notes){
+        res.status(400).json({
+          error: "Please include ID, project_id, description, and notes "
         })
-      else {
-        res.status(200).json(updated)
       }
-    }
-    )
+      
+      else {
+        db.update(req.params.id, req.body)
+        .then(action => 
+          {
+            if(action){
+              res.status(200).json(action)
+            } else {
+              res.status(404).json({
+                message: "The action with this ID does not exist."
+                })
+            }
+    })   
     .catch(err => {
-      res.status(500).json({
-        message: 'Could not update action at this time.', 
-        err
+          res.status(500).json({
+            message: 'Server error- Could not update action at this time.', 
+            err
       })
     })
-  })
+  }})
   
 router.delete('/:id', (req, res) => {
     const { id } = req.params;
-    db.remove({id})
+    db.remove(id)
   
     .then(deleted => {
       if(deleted)
-      res.status(200).json({
+      res.status(204).json({
         message: 'Deleted action.'
       })
       else{
@@ -89,7 +111,7 @@ router.delete('/:id', (req, res) => {
     })
     .catch(err => {
       res.status(500).json({
-        message: 'Could not delete action at this time.',
+        message: 'Server error- Could not delete action at this time.',
         err
       })
     })
